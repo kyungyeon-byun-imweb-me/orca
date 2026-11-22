@@ -6,6 +6,7 @@ import { resolveHostStructuredAgentLaunchEnvironment } from '../../agent-session
 import { getStructuredAgentSessionHost } from '../../../native-chat/agent-session-wire/host/structured-agent-session-registry'
 import { collectRuntimeWorktreeAgentSources } from './runtime-worktree-agent-sources'
 import { RuntimeChatWorkerEvents } from '../../orchestration/workers/turn-stops/chat-worker-runtime-events'
+import { slackScopedExecutionHostDeps } from '../../../bots/slack-scoped-execution'
 
 import type { RuntimeWorktreePsResult } from '../../../../shared/worktree/catalog/runtime-worktree-contracts'
 import type { ResolvedWorktreeSnapshot } from '../catalog/runtime-resolved-worktree-cache'
@@ -267,6 +268,7 @@ export abstract class OrcaRuntimeWithGetWorktreePs extends RuntimeChatWorkerEven
       logger,
       ...catalogDeps,
       ...this.botStructuredSessionHostDeps(() => this.requireStore()),
+      ...slackScopedExecutionHostDeps(),
       claudeCliFlags: claudeCliFlagSupport,
       usageLimitAutoContinue: this.usageLimitAutoContinueHostDeps(),
       idleSweep: { idleMs: () => nativeChatIdleStopMs(this.requireStore().getSettings()) },
@@ -276,8 +278,7 @@ export abstract class OrcaRuntimeWithGetWorktreePs extends RuntimeChatWorkerEven
       ...structuredAgentSettingGates(() => this.requireStore().getSettings()),
       launchAccountHome: (record, purpose) =>
         this.resolveStructuredAgentLaunchAccountHome(record, purpose),
-      prepareLaunchAccountHome: (record, launchDirectory) =>
-        this.prepareStructuredAgentLaunchAccountHome(record, launchDirectory),
+      prepareLaunchAccountHome: this.prepareStructuredAgentLaunchAccountHome.bind(this),
       onRequestFailure: (failure) => this.onStructuredRequestFailureForErrorMail(failure),
       onIdleProviderDeath: (death) => this.onStructuredIdleProviderDeathForMail(death),
       // Structured chat has no CLI hooks; this projection drives first-work renaming.
